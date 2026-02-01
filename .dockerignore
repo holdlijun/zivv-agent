@@ -1,0 +1,15 @@
+.venv/
+__pycache__/
+*.py[cod]
+*$py.class
+.env
+.git/
+.github/
+Dockerfile
+docker-compose.yml
+deploy.sh
+README.md
+task.md
+implementation_plan.md
+walkthrough.md
+*.log

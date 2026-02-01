@@ -1,0 +1,16 @@
+version: '3.8'
+
+services:
+  zivv-agent:
+    image: ghcr.io/holdlijun/zivv-agent:latest
+    container_name: zivv-agent
+    restart: always
+    env_file:
+      - .env
+    # 如果 agent 需要访问外部数据库，请确保网络配置正确
+    # networks:
+    #   - zivv-network
+
+    # networks:
+    #   zivv-network:
+    #     external: true
