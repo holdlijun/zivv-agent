@@ -14,7 +14,7 @@ def get_slm_llm():
         model=config.SLM_MODEL,
         openai_api_key=config.LLM_API_KEY,
         base_url=config.LLM_BASE_URL,
-        model_kwargs={"response_format": {"type": "json_object"}},
+        # model_kwargs={"response_format": {"type": "json_object"}}, # Disable JSON mode for compatibility
         timeout=10,
     )
 
@@ -55,6 +55,21 @@ def rule_filter_node(state: AgentState):
         return {**state, "status": "error", "error_msg": f"tax parse error: {e}"}
 
     return {**state, "status": "passed"}
+
+
+# 辅助函数：清洗 LLM 返回的 JSON 字符串
+def clean_json_output(content: str) -> dict:
+    """剥离 markdown 标签并解析 JSON"""
+    content = content.strip()
+    if content.startswith("```"):
+        # 移除 ```json 或 ``` 头部
+        lines = content.splitlines()
+        if lines[0].startswith("```"):
+            lines = lines[1:]
+        if lines[-1].startswith("```"):
+            lines = lines[:-1]
+        content = "\n".join(lines).strip()
+    return json.loads(content)
 
 
 def slm_tagger_node(state: AgentState):
@@ -105,7 +120,7 @@ Return JSON format:
         ]
         
         response = llm.invoke(messages)
-        data = json.loads(response.content)
+        data = clean_json_output(response.content)
         
         return {
             **state,
