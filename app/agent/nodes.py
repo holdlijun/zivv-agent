@@ -5,6 +5,7 @@ from langchain_openai import ChatOpenAI
 from langchain_core.messages import SystemMessage, HumanMessage
 from app.agent.state import AgentState
 from app.core.config import config
+from app.services.alpha_detective import alpha_detective
 
 
 # 初始化 LLM 客户端
@@ -119,6 +120,22 @@ Return JSON format:
         return {**state, "tags": ["Error"], "vibe_score": 0, "status": "error", "error_msg": str(e)}
 
 
+def alpha_detective_node(state: AgentState):
+    """Layer 2.5: 链上 Alpha 探测节点"""
+    print(f"[*] [L2.5] 正在扫描链上 Alpha: {state['symbol']} ({state['contract']})")
+    
+    try:
+        # 只针对 Solana 链进行 Alpha 分析 (目前 API 主要支持 SOL)
+        if state.get("data", {}).get("chain") == "solana":
+            alpha_res = alpha_detective.analyze_token(state["contract"])
+            return {**state, "alpha_data": alpha_res}
+        else:
+            return {**state, "alpha_data": {"note": "Chain not supported for Alpha scan"}}
+    except Exception as e:
+        print(f"[!] [L2.5] Alpha scan failed: {e}")
+        return {**state, "alpha_data": {"error": str(e)}}
+
+
 def deep_dive_node(state: AgentState):
     """Layer 3: LLM 深度研报节点 (Zivv Agent 侦探版)"""
     print(f"[*] [L3] 正在生成深度研报 (侦探视角): {state['symbol']}")
@@ -133,13 +150,23 @@ def deep_dive_node(state: AgentState):
         market_data = f"Symbol ${state['symbol']}, Liquidity: ${token_info.get('liquidity', '0')}, MC: ${token_info.get('market_cap', '0')}"
         security_data = f"Honeypot: {'Yes' if token_info.get('honeypot') else 'No'}, Buy Tax: {token_info.get('buy_tax', '0')}%, Sell Tax: {token_info.get('sell_tax', '0')}%"
         search_data = "No recent social signals found in local context. (Search capability pending)"
-        dev_data = f"Deployer: {state['contract']} (History lookup pending)"
+        
+        # 注入 Alpha 数据
+        alpha_info = state.get("alpha_data", {})
+        alpha_context = ""
+        if alpha_info and "smart_money_count" in alpha_info:
+            alpha_context = f"""
+[ON-CHAIN ALPHA]:
+- Smart Money Count: {alpha_info.get('smart_money_count', 0)}
+- Top Holders Avg PnL: ${alpha_info.get('avg_top_pnl', 0):.2f}
+- Alpha Signal: {'DETECTED' if alpha_info.get('is_alpha') else 'Weak'}
+"""
 
         assembled_context = f"""
 [MARKET]: {market_data}
 [SECURITY]: {security_data}
+{alpha_context}
 [SEARCH]: {search_data}
-[DEV]: {dev_data}
 [DESCRIPTION]: {token_info.get('description', 'N/A')}
 """
 
@@ -154,13 +181,13 @@ Context Data:
 
 Instructions:
 1. **Narrative Check:** detailedly explain WHY this coin is pumping. Is it related to a real-world event? Or is it just bot manipulation?
-2. **Security Audit:** Look at the [SECURITY] and [DEV] data. Even if GoPlus says safe, if the Dev has a history of Rugs, mark it as "Dangerous".
+2. **Security Audit:** Look at the [SECURITY] data. Even if GoPlus says safe, verify if there are any suspicious patterns in the liquidity or tax.
 3. **Verdict:** Give a final recommendation: "Ape in" (High conviction), "Degen Play" (Small bag), or "Stay Away".
 
 Output format (Markdown):
 ## 🕵️ Zivv Analysis: ${state['symbol']}
 **🎯 Narrative:** [Your analysis here]
-**🛡️ Risk Check:** [Highlight Dev history and tax risks]
+**🛡️ Risk Check:** [Highlight security and tax risks]
 **💡 Verdict:** [Final conclusion]
 
 Please write the report in Chinese, but keep the headers and token symbols in English for professional look."""

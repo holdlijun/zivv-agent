@@ -64,10 +64,35 @@ def persist_result(state: AgentState):
                     (state["token_id"], json.dumps(state["tags"]), state.get("vibe_score"), risk_hint),
                 )
 
-            if state["stage"] == 3 and state.get("report"):
                 cur.execute(
                     "INSERT INTO analysis_reports (token_id, report_text) VALUES (%s, %s)",
                     (state["token_id"], state["report"]),
+                )
+
+            # 记录链上 Alpha 数据
+            if state.get("alpha_data"):
+                alpha = state["alpha_data"]
+                cur.execute(
+                    """
+                    INSERT INTO token_alpha (
+                        token_id, smart_money_score, holder_concentration, 
+                        is_cabal_confirmed, top_holders_pnl, degen_score
+                    ) VALUES (%s, %s, %s, %s, %s, %s)
+                    ON CONFLICT (token_id) DO UPDATE SET
+                        smart_money_score = EXCLUDED.smart_money_score,
+                        holder_concentration = EXCLUDED.holder_concentration,
+                        is_cabal_confirmed = EXCLUDED.is_cabal_confirmed,
+                        top_holders_pnl = EXCLUDED.top_holders_pnl,
+                        updated_at = NOW()
+                    """,
+                    (
+                        state["token_id"],
+                        alpha.get("smart_money_count"), # 暂时用 count 代替 score
+                        alpha.get("holder_concentration"),
+                        alpha.get("is_cabal_confirmed"),
+                        json.dumps(alpha) if alpha else None,
+                        alpha.get("degen_score")
+                    )
                 )
 
             # 更新 Project 表用于前端展示
@@ -126,7 +151,7 @@ def persist_result(state: AgentState):
             if state.get("status") == "passed":
                 next_stage = state["stage"] + 1
                 if next_stage <= 3:
-                    if next_stage == 3 and (state.get("vibe_score") or 0) < 80:
+                    if next_stage == 3 and (state.get("vibe_score") or 0) < 60:
                         pass
                     else:
                         cur.execute(

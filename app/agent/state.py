@@ -13,5 +13,6 @@ class AgentState(TypedDict):
     risk_level: Optional[str]
     short_comment: Optional[str]
     report: Optional[str]
+    alpha_data: Optional[dict]
     status: str  # 'passed', 'filtered', 'error'
     error_msg: Optional[str]
