@@ -16,11 +16,15 @@ def create_graph():
     # 简化的流转逻辑
     workflow.set_entry_point("rule_filter") # 实际入口控制在 main.py
 
+    # 逻辑流转: L1 -> L2 -> L3 -> Persist
     workflow.add_conditional_edges(
         "rule_filter",
-        lambda x: "persist" if x["status"] == "filtered" else "persist"
+        lambda x: "slm_tagger" if x["status"] == "passed" else "persist"
     )
-    workflow.add_edge("slm_tagger", "persist")
+    workflow.add_conditional_edges(
+        "slm_tagger",
+        lambda x: "deep_dive" if x["status"] == "passed" and (x.get("vibe_score") or 0) >= 80 else "persist"
+    )
     workflow.add_edge("deep_dive", "persist")
     workflow.add_edge("persist", END)
 

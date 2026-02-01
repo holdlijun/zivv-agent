@@ -133,7 +133,9 @@ def persist_result(state: AgentState):
                             """
                             INSERT INTO cleaning_jobs (token_id, stage, status, next_run_at, created_at, updated_at)
                             VALUES (%s, %s, 0, NOW(), NOW(), NOW())
-                            ON CONFLICT (token_id, stage) DO UPDATE SET status = 0, updated_at = NOW()
+                            ON CONFLICT (token_id, stage) DO UPDATE 
+                            SET status = 0, updated_at = NOW()
+                            WHERE cleaning_jobs.status != 2
                             """,
                             (state["token_id"], next_stage),
                         )
