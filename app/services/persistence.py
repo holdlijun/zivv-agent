@@ -32,6 +32,7 @@ def mark_job_failed(job_id: int, error_msg: str):
 
 
 def persist_result(state: AgentState):
+    print(f"[*] [Persist][Job:{state['job_id']}] Saving results for Stage:{state['stage']}")
     conn = get_db_connection()
     try:
         with conn.cursor() as cur:
@@ -141,11 +142,11 @@ def persist_result(state: AgentState):
                     ),
                 )
 
-            # 更新任务状态为完成
             cur.execute(
                 "UPDATE cleaning_jobs SET status = 2, updated_at = NOW() WHERE id = %s",
                 (state["job_id"],),
             )
+            print(f"[*] [Persist][Job:{state['job_id']}] Job marked as COMPLETED")
 
             # 阶段派发下一阶段任务
             if state.get("status") == "passed":
@@ -154,6 +155,7 @@ def persist_result(state: AgentState):
                     if next_stage == 3 and (state.get("vibe_score") or 0) < 60:
                         pass
                     else:
+                        print(f"[*] [Persist][Job:{state['job_id']}] Creating/Updating NEXT STAGE job: {next_stage}")
                         cur.execute(
                             """
                             INSERT INTO cleaning_jobs (token_id, stage, status, next_run_at, created_at, updated_at)

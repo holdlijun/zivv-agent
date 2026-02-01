@@ -29,7 +29,7 @@ def get_deep_dive_llm():
 
 def rule_filter_node(state: AgentState):
     """Layer 1: 规则清洗节点"""
-    print(f"[*] [L1] 正在处理: {state['symbol']} ({state['contract']})")
+    print(f"[*] [L1][Job:{state.get('job_id')}] 正在处理: {state['symbol']} ({state['contract']})")
 
     liq = float(state["data"].get("liquidity") or 0)
     if liq < config.MIN_LIQUIDITY:
@@ -74,7 +74,7 @@ def clean_json_output(content: str) -> dict:
 
 def slm_tagger_node(state: AgentState):
     """Layer 2: SLM 快筛节点 (LangChain 版)"""
-    print(f"[*] [L2] 正在分析标签: {state['symbol']}")
+    print(f"[*] [L2][Job:{state.get('job_id')}] 正在分析标签: {state['symbol']}")
 
     if not config.LLM_API_KEY:
         print("[!] [L2] Missing LLM_API_KEY")
@@ -137,7 +137,7 @@ Return JSON format:
 
 def alpha_detective_node(state: AgentState):
     """Layer 2.5: 链上 Alpha 探测节点"""
-    print(f"[*] [L2.5] 正在扫描链上 Alpha: {state['symbol']} ({state['contract']})")
+    print(f"[*] [L2.5][Job:{state.get('job_id')}] 正在扫描链上 Alpha: {state['symbol']} ({state['contract']})")
     
     try:
         # 只针对 Solana 链进行 Alpha 分析 (目前 API 主要支持 SOL)
@@ -153,7 +153,7 @@ def alpha_detective_node(state: AgentState):
 
 def deep_dive_node(state: AgentState):
     """Layer 3: LLM 深度研报节点 (Zivv Agent 侦探版)"""
-    print(f"[*] [L3] 正在生成深度研报 (侦探视角): {state['symbol']}")
+    print(f"[*] [L3][Job:{state.get('job_id')}] 正在生成深度研报 (侦探视角): {state['symbol']}")
 
     if not config.LLM_API_KEY:
         return {**state, "report": "Missing API Key", "status": "error", "error_msg": "Missing API Key"}

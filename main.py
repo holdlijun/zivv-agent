@@ -11,6 +11,8 @@ def run_worker():
     while True:
         batch_start = time.time()
         jobs = pull_jobs()
+        if jobs:
+            print(f"[*] [Worker] Pulled {len(jobs)} jobs: {[j['id'] for j in jobs]}")
         if not jobs:
             time.sleep(config.POLL_INTERVAL)
             continue
@@ -39,11 +41,14 @@ def run_worker():
             try:
                 # 根据任务阶段路由到对应的 Agent
                 if job["stage"] == 1:
+                    print(f"[*] [Main] Job:{job['id']} Stage:1 -> Entering Graph")
                     graph.invoke(state)
                 elif job["stage"] == 2:
+                    print(f"[*] [Main] Job:{job['id']} Stage:2 -> Manual Node Call")
                     res = slm_tagger_node(state)
                     persist_result(res)
                 elif job["stage"] == 3:
+                    print(f"[*] [Main] Job:{job['id']} Stage:3 -> Manual Node Call")
                     res = deep_dive_node(state)
                     persist_result(res)
             except Exception as e:
