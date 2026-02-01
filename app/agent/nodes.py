@@ -15,7 +15,6 @@ def get_slm_llm():
         base_url=config.LLM_BASE_URL,
         model_kwargs={"response_format": {"type": "json_object"}},
         timeout=10,
-        openai_proxy=config.HTTPS_PROXY or config.HTTP_PROXY,
     )
 
 def get_deep_dive_llm():
@@ -24,7 +23,6 @@ def get_deep_dive_llm():
         openai_api_key=config.LLM_API_KEY,
         base_url=config.LLM_BASE_URL,
         timeout=30,
-        openai_proxy=config.HTTPS_PROXY or config.HTTP_PROXY,
     )
 
 

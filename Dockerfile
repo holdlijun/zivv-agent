@@ -11,6 +11,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 ADD https://astral.sh/uv/install.sh /uv-install.sh
 RUN sh /uv-install.sh && rm /uv-install.sh
 ENV PATH="/root/.local/bin/:$PATH"
+ENV PYTHONUNBUFFERED=1
 
 # Set working directory
 WORKDIR /app
