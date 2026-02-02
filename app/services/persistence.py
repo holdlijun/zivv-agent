@@ -65,6 +65,8 @@ def persist_result(state: AgentState):
                     (state["token_id"], json.dumps(state["tags"]), state.get("vibe_score"), risk_hint),
                 )
 
+            # 记录研报 (如果有内容的话)
+            if state.get("report"):
                 cur.execute(
                     "INSERT INTO analysis_reports (token_id, report_text) VALUES (%s, %s)",
                     (state["token_id"], state["report"]),

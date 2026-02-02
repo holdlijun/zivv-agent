@@ -52,6 +52,7 @@ def run_worker():
                     res = deep_dive_node(state)
                     persist_result(res)
             except Exception as e:
+                print(f"[!] [Main] Job:{job['id']} 运行崩溃: {e}")
                 mark_job_failed(job["id"], str(e))
         batch_cost = time.time() - batch_start
         if jobs:
